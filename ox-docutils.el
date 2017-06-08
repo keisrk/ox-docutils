@@ -172,7 +172,10 @@
     (case type
       (ordered (format "<list_item>%s</list_item>" contents))
       (unordered (format "<list_item>%s</list_item>" contents))
-      (descriptive (format "<definition_list_item>%s</definition_list_item>" contents)))))
+      (descriptive
+       (format
+        "<definition_list_item><term>%s</term><definition>%s</definition></definition_list_item>"
+        (org-export-data (org-element-property :tag item) info) contents)))))
 
 ;;;; Latex Environment
 (defun org-docutils-latex-environment (latex-environment _contents info)
