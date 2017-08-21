@@ -35,8 +35,9 @@
 ;; Utility functions
 (defun replace-amp (str)
   "Replace & with &amp; occurring in str."
-  (if (string-match "&" str)
-      (replace-match "&amp;" t t str) str))
+  (replace-regexp-in-string "&" "&amp;" str))
+;;  (if (string-match "&" str)
+;;      (replace-match "&amp;" t t str) str))
 
 (defun replace-tag-left (newtag str)
   "Replace leading <tag> with <newtag> occurring in str."
@@ -185,7 +186,7 @@
 ;;;; Latex Environment
 (defun org-docutils-latex-environment (latex-environment _contents info)
   "Transcode a LATEX-ENVIRONMENT element from Org to docutils."
-  (let ((latex-frag (remove-amp
+  (let ((latex-frag (replace-amp
                      (org-remove-indentation
                       (org-element-property :value latex-environment)))))
     (format "<math_block>%s</math_block>" latex-frag)))
@@ -193,9 +194,9 @@
 ;;;; Latex Fragment
 (defun org-docutils-latex-fragment (latex-fragment _contents info)
   "Transcode a LATEX-FRAGMENT element from Org to docutils."
-  (let ((latex-frag (remove-amp
+  (let ((latex-frag (replace-amp
                      (org-remove-indentation
-                      (org-element-property :value latex-fragment))))
+                      (org-element-property :value latex-fragment)))))
     (format "<math>%s</math>" (remove-tex latex-frag))))
 
 ;;;; Link
