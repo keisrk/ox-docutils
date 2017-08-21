@@ -86,7 +86,7 @@
 
 (defun remove-tex (str)
   "Remove tex occurring in str."
-  (remove-tex-left (remove-tex-right (replace-amp str))))
+  (remove-tex-left (remove-tex-right str)))
 
 ;; Bold, etc.
 (customize-set-variable 'org-html-text-markup-alist
@@ -185,15 +185,17 @@
 ;;;; Latex Environment
 (defun org-docutils-latex-environment (latex-environment _contents info)
   "Transcode a LATEX-ENVIRONMENT element from Org to docutils."
-  (let ((latex-frag (org-remove-indentation
-		     (org-element-property :value latex-environment))))
+  (let ((latex-frag (remove-amp
+                     (org-remove-indentation
+                      (org-element-property :value latex-environment)))))
     (format "<math_block>%s</math_block>" latex-frag)))
 
 ;;;; Latex Fragment
 (defun org-docutils-latex-fragment (latex-fragment _contents info)
   "Transcode a LATEX-FRAGMENT element from Org to docutils."
-  (let ((latex-frag (org-remove-indentation
-		     (org-element-property :value latex-fragment))))
+  (let ((latex-frag (remove-amp
+                     (org-remove-indentation
+                      (org-element-property :value latex-fragment))))
     (format "<math>%s</math>" (remove-tex latex-frag))))
 
 ;;;; Link
