@@ -33,6 +33,11 @@
   )
 
 ;; Utility functions
+(defun replace-amp (str)
+  "Replace & with &amp; occurring in str."
+  (if (string-match "&" str)
+      (replace-match "&amp;" t t str) str))
+
 (defun replace-tag-left (newtag str)
   "Replace leading <tag> with <newtag> occurring in str."
   (if (string-match "\\`<[^>]*>" str)
@@ -81,7 +86,7 @@
 
 (defun remove-tex (str)
   "Remove tex occurring in str."
-  (remove-tex-left (remove-tex-right str)))
+  (remove-tex-left (remove-tex-right (replace-amp str))))
 
 ;; Bold, etc.
 (customize-set-variable 'org-html-text-markup-alist
