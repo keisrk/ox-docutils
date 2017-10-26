@@ -11,6 +11,7 @@
   :translate-alist
   '(
     (example-block . org-docutils-example-block)
+    (special-block . org-docutils-special-block)
     (headline . org-docutils-headline)
     (inner-template . org-docutils-inner-template)
     (item . org-docutils-item)    
@@ -163,6 +164,26 @@
 (defun org-docutils-example-block (example-block _contents info)
   "Transcode a EXAMPLEBLOCK object from Org to docutils."
   (format "<literal_block>%s</literal_block>" (org-html-format-code example-block info)))
+
+;;;; Special Block
+(defun org-docutils-special-block (special-block contents info)
+    "Transcode a SPECIAL-BLOCK element from Org to docutils.
+CONTENTS holds the contents of the block.  INFO is a plist
+holding contextual information."
+    (let* ((block-type (org-element-property :type special-block))
+           (attributes (org-export-read-attribute :attr_html special-block)))
+      (let ((class (plist-get attributes :class)))
+        (setq attributes (plist-put attributes :class
+                                    (if class (concat class " " block-type)
+                                      block-type))))
+      (let* ((contents (or contents ""))
+             (name (org-element-property :name special-block))
+             (a (org-html--make-attribute-string
+                 (if (or (not name) (plist-member attributes :id))
+                     attributes
+                   (plist-put attributes :id name))))
+             (str (if (org-string-nw-p a) (concat " " a) "")))
+        (format "<admonition%s>\n%s\n</admonition>" str contents))))
 
 ;;;; Headline
 (defun org-docutils-headline (headline contents info)
