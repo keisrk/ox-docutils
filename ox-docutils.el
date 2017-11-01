@@ -7,7 +7,7 @@
 ;; Define Backend  
 (org-export-define-derived-backend 'docutils 'html
   :filters-alist
-  '(;;(:filter-final-output . ox-docutils-filter-final-output)
+  '((:filter-final-output . ox-docutils-filter-final-output)
     (:filter-section . ox-docutils-filter-section))
   :translate-alist
   '(
@@ -32,7 +32,18 @@
        ((?D "As Docutils buffer" org-docutils-export-as-docutils)
         (?d "As Docutils file" org-docutils-export-to-docutils)
         ))
+  :options-alist
+  '(
+    (:docutils-bibtex-path nil "docutils-bibtex-path" org-docutils-bibtex-path)
+    )
   )
+
+(defcustom org-docutils-bibtex-path nil
+  "Non nil means you specify the path for the bibtex file. The
+  name must be explicit: file extention is necessary. If nil then
+  \"`input-file-name'_ref.html\" is used."
+  :group 'org-export-docutils
+  :type 'string)
 
 ;; Utility functions
 (defun replace-amp (str)
@@ -131,8 +142,8 @@
     (format "<literal_block classes=\"code %s\">%s</literal_block>" lang code)))
 
 (defun org-docutils-format-headline-function
-    (todo todo-type priority text tags)
-  "Bug: It should take 6 args, but complains the 6th."
+    (todo todo-type priority text tags info)
+  "Fixed: Bug: It should take 6 args, but complains the 6th."
   text)
 
 ;; Transcode Functions
@@ -216,14 +227,26 @@ holding contextual information."
     (format "<math_block>%s</math_block>" latex-frag)))
 
 ;;;; Latex Fragment
+;;;;;; Citation fragment
+(defun org-docutils--citation-format (label info)
+  "Format a CITATION-FRAGMENT element from Org to docutils."
+  (let ((inp (file-name-base (plist-get info :input-file)))
+        (path (plist-get info :docutils-bibtex-path)))
+    (concat
+     (format "<citation ids=\"%s\"><label><reference refuri=\"%s#%s\">%s" label
+             (if path path (format "ref_%s.html" inp)) label label)
+     "</reference></label></citation>")))
+
 (defun org-docutils-latex-fragment (latex-fragment _contents info)
   "Transcode a LATEX-FRAGMENT element from Org to docutils."
   (if (org-bibtex-citation-p latex-fragment)
       (let ((lbl (org-bibtex-get-citation-key latex-fragment))
-            (bib (plist-get info :bibtex-citation)))
-        (add-to-list 'bib
-                     (format "<citation ids=\"%s\"><label>%s</label>refuri=\"ref.html#%s\"</citation>" lbl lbl lbl) t)
+            (bib (plist-get info :bibtex-citation))
+            (rec (plist-get info :bibtex-record)))
+        (add-to-list 'bib (org-docutils--citation-format lbl info) t)
         (plist-put info :bibtex-citation bib)
+        (add-to-list 'rec lbl)
+        (plist-put info :bibtex-record rec)
         (format "<citation_reference refid=\"%s\">%s</citation_reference>" lbl lbl))
     (let ((latex-frag (replace-amp
                        (org-remove-indentation
@@ -300,10 +323,15 @@ holding contextual information."
   (remove-tag text))
 
 ;;;; Final Output
-;;(defun ox-docutils-filter-final-output (text back-end info)
-  ;;"<document>TEXT</document>"
-  ;;(format "<document>%s</document>" text))
-  ;;text)
+(defun ox-docutils-filter-final-output (text back-end info)
+  "Output citefile. Later we can call `bibtex2html --citefile
+citefile.txt ref.bib'."
+  (let ((inp (file-name-base (plist-get info :input-file)))
+        (rec (plist-get info :bibtex-record)))
+    (when rec
+      (with-temp-file (format "citefile_%s.txt" inp)
+        (insert (mapconcat 'identity rec " ")))))
+  text)
 
 ;; End-user functions
 (defun org-docutils-export-as-docutils
