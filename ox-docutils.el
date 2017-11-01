@@ -2,6 +2,7 @@
 (require 'ox)
 (require 'ox-publish)
 (require 'ox-html)
+(require 'ox-bibtex)
 
 ;; Define Backend  
 (org-export-define-derived-backend 'docutils 'html
@@ -158,6 +159,8 @@
                      (format "<subtitle>%s</subtitle>"
                              (org-export-data subtitle info)) ""))));)
    contents
+   (let ((bib (plist-get info :bibtex-citation)))
+     (mapconcat 'identity bib " "))
    "</document>"))
 
 ;;;; Example Block
@@ -215,10 +218,17 @@ holding contextual information."
 ;;;; Latex Fragment
 (defun org-docutils-latex-fragment (latex-fragment _contents info)
   "Transcode a LATEX-FRAGMENT element from Org to docutils."
-  (let ((latex-frag (replace-amp
-                     (org-remove-indentation
-                      (org-element-property :value latex-fragment)))))
-    (format "<math>%s</math>" (remove-tex latex-frag))))
+  (if (org-bibtex-citation-p latex-fragment)
+      (let ((lbl (org-bibtex-get-citation-key latex-fragment))
+            (bib (plist-get info :bibtex-citation)))
+        (add-to-list 'bib
+                     (format "<citation ids=\"%s\"><label>%s</label>refuri=\"ref.html#%s\"</citation>" lbl lbl lbl) t)
+        (plist-put info :bibtex-citation bib)
+        (format "<citation_reference refid=\"%s\">%s</citation_reference>" lbl lbl))
+    (let ((latex-frag (replace-amp
+                       (org-remove-indentation
+                        (org-element-property :value latex-fragment)))))
+      (format "<math>%s</math>" (remove-tex latex-frag)))))
 
 ;;;; Link
 (defun org-docutils-link (link desc info)
