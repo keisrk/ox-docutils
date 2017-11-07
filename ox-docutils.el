@@ -46,11 +46,6 @@
   :type 'string)
 
 ;; Utility functions
-(defun replace-amp (str)
-  "Replace & with &amp; occurring in str."
-  (replace-regexp-in-string "&" "&amp;" str))
-;;  (if (string-match "&" str)
-;;      (replace-match "&amp;" t t str) str))
 
 (defun replace-tag-left (newtag str)
   "Replace leading <tag> with <newtag> occurring in str."
@@ -133,7 +128,7 @@
   (let* ((lang (org-element-property :language element))
 	 ;; Extract code and references.
 	 (code-info (org-export-unravel-code element))
-	 (code (car code-info))
+	 (code (org-html-encode-plain-text (car code-info)))
 	 (refs (cdr code-info))
 	 ;; Does the src block contain labels?
 	 (retain-labels (org-element-property :retain-labels element)))
@@ -221,7 +216,7 @@ holding contextual information."
 ;;;; Latex Environment
 (defun org-docutils-latex-environment (latex-environment _contents info)
   "Transcode a LATEX-ENVIRONMENT element from Org to docutils."
-  (let ((latex-frag (replace-amp
+  (let ((latex-frag (org-html-encode-plain-text
                      (org-remove-indentation
                       (org-element-property :value latex-environment)))))
     (format "<math_block>%s</math_block>" latex-frag)))
@@ -248,7 +243,7 @@ holding contextual information."
         (add-to-list 'rec lbl)
         (plist-put info :bibtex-record rec)
         (format "<citation_reference refid=\"%s\">%s</citation_reference>" lbl lbl))
-    (let ((latex-frag (replace-amp
+    (let ((latex-frag (org-html-encode-plain-text
                        (org-remove-indentation
                         (org-element-property :value latex-fragment)))))
       (format "<math>%s</math>" (remove-tex latex-frag)))))
