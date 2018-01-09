@@ -96,10 +96,24 @@
   "Remove tex occurring in str."
   (remove-tex-left (remove-tex-right str)))
 
+(defun remove-latex-env-left (str)
+  "Remove leading \begin{align*, eq*} occurring in str."
+  (if (string-match "\\\\begin{\\(align\\|eq\\)*\\**}" str)
+      (replace-match "" t t str) str))
+
+(defun remove-latex-env-right (str)
+  "Remove leading \end{align*, eq*} occurring in str."
+  (if (string-match "\\\\end{\\(align\\|eq\\)*\\**}" str)
+      (replace-match "" t t str) str))
+
+(defun remove-latex-env (str)
+  "Remove latex env wrapping str."
+  (remove-latex-env-left (remove-latex-env-right str)))
+
 (defun org-docutils-bibtex-citation-p (latex-frg)
   "Non-nil when `latex-fragment' is a citation."
-  (cond ((eq latex-fragment (org-element-type latex-frg))
-             (string-match "\\`\\\\cite{" (org-element-property :value latex-frg)))))
+  (if (eq 'latex-fragment (org-element-type latex-frg))
+             (string-match "\\`\\\\cite{" (org-element-property :value latex-frg))))
 
 (defun org-docutils-bibtex-get-citation-key (citation)
   "Return key for a given citation, as a string.
@@ -212,7 +226,8 @@ holding contextual information."
 (defun org-docutils-headline (headline contents info)
   "Set ids attr."
   (let ((ids (org-export-data (org-element-property :title headline) info)))
-    (format "<section ids=\"%s\"><title>%s</title>%s</section>" ids ids contents)))
+    (format "<section ids=\"%s\">\
+<title>%s</title>%s</section>" ids ids contents)))
 
 ;;;; Item
 (defun org-docutils-item (item contents info)
@@ -224,15 +239,19 @@ holding contextual information."
       (unordered (format "<list_item>%s</list_item>" contents))
       (descriptive
        (format
-        "<definition_list_item><term>%s</term><definition>%s</definition></definition_list_item>"
+        "<definition_list_item><term>%s</term>\
+<definition>%s</definition></definition_list_item>"
         (org-export-data (org-element-property :tag item) info) contents)))))
 
 ;;;; Latex Environment
 (defun org-docutils-latex-environment (latex-environment _contents info)
-  "Transcode a LATEX-ENVIRONMENT element from Org to docutils."
+  "Transcode a LATEX-ENVIRONMENT element from Org to
+docutils. Docutils math_block element does not require
+\begin{align*}\end{align*} at all."
   (let ((latex-frag (org-html-encode-plain-text
-                     (org-remove-indentation
-                      (org-element-property :value latex-environment)))))
+                     (remove-latex-env
+                      (org-remove-indentation
+                       (org-element-property :value latex-environment))))))
     (format "<math_block>%s</math_block>" latex-frag)))
 
 ;;;; Latex Fragment
